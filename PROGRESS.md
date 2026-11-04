@@ -74,3 +74,11 @@ Packages: `GLSP-Client` (protocol client, no Bloc), `GLSP-Client-Bloc` (renderin
 - With them, a task created on the Java server gets the layout of the Eclipse client: icon 5@5 25×20, label 31@7, height 30.
 - `GLSPBlocEditor exampleWorkflow` / `openWorkflow:host:port:` moved to `GLSP-Client-Workflow` and use these views.
 - Known limit: edges are clipped on the bounding box of the diamonds, not on their outline.
+
+## Client step 10 — Arrowheads, routing points, shape-aware anchors ✅ 6 new tests (163 tests in all)
+- `GLSPBlocEdgeView`: a polyline through the `routingPoints` of the edge, with an arrowhead (a triangle child) at the target,
+  pointing along the last segment (`hasArrowhead` to override). Bloc has no arrowheads in v3.
+- Edges end on the outline of their nodes: node views answer `anchorIn:towards:` (rectangle by default,
+  diamond for the Workflow decision and merge nodes).
+- Pitfall: Bloc clips the children to the geometry of their parent; a polyline has no area, so the arrowhead was not drawn
+  while the geometry tests passed (`clipChildren: false`, and a test for it).
