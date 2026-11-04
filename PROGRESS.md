@@ -46,3 +46,11 @@ Packages: `GLSP-Client` (protocol client, no Bloc), `GLSP-Client-Bloc` (renderin
 - `GLSPEclipseWorkflowServerTest` (skipped without server): initialize, model, type hints and palette, create, delete, undo, save.
 - The full example1.wf displays in the Bloc editor, with the Workflow tool palette.
 - Known gap: elements created on the server come without size, and the GModel computer has none to give.
+
+## Fix — Closing an editor window opened on the Java server opened a debugger ✅ 3 new tests
+- Two close handlers (close the diagram / close the connection) ran in the wrong order: disposing the session failed on the
+  closed connection, inside the UI process of Bloc.
+- `GLSPBlocEditor >> windowClosed` is the only handler: it closes the diagram, then runs the `whenClosedDo:` actions;
+  closing a window never signals (failures go to the Transcript).
+- A closed connection has no session to dispose: `GLSPClient >> closeDiagram:` does not contact the server any more.
+- `GLSPBlocEditor exampleWorkflow` / `openWorkflow:host:port:` open a workflow model of the Eclipse GLSP Java server.
