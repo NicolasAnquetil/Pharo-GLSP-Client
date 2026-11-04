@@ -20,3 +20,10 @@ Packages: `GLSP-Client` (protocol client, no Bloc), `GLSP-Client-Bloc` (renderin
 - Views kept by GModel id on updateModel (moved / updated / reparented), removed and added views, edges recomputed.
 - `diagram:` follows a `GLSPClientDiagram`; in an open space, updates are enqueued as Bloc tasks.
 - Checked visually with a headless PNG export of the TaskList example.
+
+## Client step 5 — Editor window ✅ 6 tests (37 client tests)
+- `GLSPBlocEditor`: tool palette (`GLSPBlocPaletteElement`, groups and items sorted by `sortString`) + diagram element.
+- `GLSPBlocEditor openOn: aClientDiagram` opens it in a `BlSpace`; the title is the model file name, with a `*` when dirty;
+  closing the window disposes the client session. `GLSPBlocEditor exampleTaskList` opens a demo.
+- `GLSPTBlocUIProcess`: changes coming from the server are applied in the UI process of Bloc (`BlSpace>>deferOrValue:`).
+- Tests show the spaces on `BlHeadlessHost`: no window, but the real Bloc UI process runs (`settle`).
