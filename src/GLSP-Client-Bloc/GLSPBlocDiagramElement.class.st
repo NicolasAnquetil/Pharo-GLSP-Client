@@ -4,6 +4,8 @@ I display a GModel with Bloc. I have a view (a BlElement made by my view registr
 Class {
 	#name : 'GLSPBlocDiagramElement',
 	#superclass : 'BlElement',
+	#traits : 'GLSPTBlocUIProcess',
+	#classTraits : 'GLSPTBlocUIProcess classTrait',
 	#instVars : [
 		'root',
 		'registry',
@@ -51,15 +53,6 @@ GLSPBlocDiagramElement >> diagramChanged: aClientDiagramChanged [
 
 	(#( 'setModel' 'updateModel' ) includes: aClientDiagramChanged action kind) ifFalse: [ ^ self ].
 	self inUIProcessDo: [ self root: diagram root ]
-]
-
-{ #category : 'client' }
-GLSPBlocDiagramElement >> inUIProcessDo: aBlock [
-	"In an open space, changes must happen in the UI process of Bloc: they are enqueued as a task"
-
-	self isAttachedToSceneGraph
-		ifTrue: [ self enqueueTask: (BlTaskAction new action: aBlock) ]
-		ifFalse: [ aBlock value ]
 ]
 
 { #category : 'accessing' }
