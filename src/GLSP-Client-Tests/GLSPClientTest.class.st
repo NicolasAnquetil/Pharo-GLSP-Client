@@ -15,9 +15,11 @@ GLSPClientTest >> testChangesAreAnnounced [
 	diagram := self openModel.
 	kinds := OrderedCollection new.
 	diagram announcer when: GLSPClientDiagramChanged do: [ :announcement | kinds add: announcement action kind ] for: self.
-	diagram dispatch: (GLSPCreateNodeOperation new
-			 elementTypeId: 'task';
-			 yourself).
+	diagram
+		dispatch: (GLSPCreateNodeOperation new
+				 elementTypeId: 'task';
+				 yourself)
+		andWaitFor: 'setDirtyState'.
 	self assert: kinds asArray equals: #( 'updateModel' 'setDirtyState' )
 ]
 
@@ -67,13 +69,24 @@ GLSPClientTest >> testOperationUpdatesTheModelAndTheDirtyState [
 
 	| diagram |
 	diagram := self openModel.
-	diagram dispatch: (GLSPCreateNodeOperation new
-			 elementTypeId: 'task';
-			 location: 5 @ 5;
-			 yourself).
+	diagram
+		dispatch: (GLSPCreateNodeOperation new
+				 elementTypeId: 'task';
+				 location: 5 @ 5;
+				 yourself)
+		andWaitFor: 'setDirtyState'.
 	self assert: diagram root children size equals: 4.
 	self assert: diagram root revision equals: 2.
 	self assert: diagram isDirty
+]
+
+{ #category : 'tests' }
+GLSPClientTest >> testRequestAnswersTheResponse [
+
+	| diagram response |
+	diagram := self openModel.
+	response := diagram requestTypeHints.
+	self assert: response kind equals: 'setTypeHints'
 ]
 
 { #category : 'tests' }
@@ -93,9 +106,11 @@ GLSPClientTest >> testTwoDiagramsAreIndependent [
 	| first second |
 	first := self openModel.
 	second := self openModel.
-	first dispatch: (GLSPCreateNodeOperation new
-			 elementTypeId: 'task';
-			 yourself).
+	first
+		dispatch: (GLSPCreateNodeOperation new
+				 elementTypeId: 'task';
+				 yourself)
+		andWaitFor: 'setDirtyState'.
 	self assert: first root children size equals: 4.
 	self assert: second root children size equals: 3
 ]
@@ -117,15 +132,26 @@ GLSPClientTest >> testUndoRedoAndSave [
 
 	| diagram |
 	diagram := self openModel.
-	diagram dispatch: (GLSPDeleteElementOperation new
-			 elementIds: #( 'task2' );
-			 yourself).
+	diagram
+		dispatch: (GLSPDeleteElementOperation new
+				 elementIds: #( 'task2' );
+				 yourself)
+		andWaitFor: 'setDirtyState'.
 	self assert: diagram root children size equals: 1.
-	diagram undo.
+	diagram dispatch: GLSPUndoAction new andWaitFor: 'setDirtyState'.
 	self assert: diagram root children size equals: 3.
-	diagram redo.
+	diagram dispatch: GLSPRedoAction new andWaitFor: 'setDirtyState'.
 	self assert: diagram root children size equals: 1.
-	diagram save.
+	diagram dispatch: GLSPSaveModelAction new andWaitFor: 'setDirtyState'.
 	self deny: diagram isDirty.
 	self assert: ((STONJSON fromString: file contents) at: 'tasks') size equals: 1
+]
+
+{ #category : 'tests' }
+GLSPClientTest >> testWaitingForAnAnswerThatNeverComesSignalsAClientError [
+
+	| diagram |
+	diagram := self openModel.
+	client timeout: 0.2.
+	self should: [ diagram dispatch: GLSPUndoAction new andWaitFor: 'noSuchAction' ] raise: GLSPClientError
 ]

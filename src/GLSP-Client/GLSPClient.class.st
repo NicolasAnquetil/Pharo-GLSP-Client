@@ -18,7 +18,10 @@ Class {
 		'responses',
 		'diagrams',
 		'serverActions',
-		'mutex'
+		'mutex',
+		'closed',
+		'lastError',
+		'timeout'
 	],
 	#category : 'GLSP-Client-Core',
 	#package : 'GLSP-Client',
@@ -31,6 +34,17 @@ GLSPClient class >> connection: aClientConnection [
 	^ self new
 		  setConnection: aClientConnection;
 		  yourself
+]
+
+{ #category : 'instance creation' }
+GLSPClient class >> host: aHostName port: aPortNumber [
+	"A client connected through a TCP socket to a GLSP server (e.g. an Eclipse GLSP server started with --port)"
+
+	| connection client |
+	connection := GLSPSocketConnection host: aHostName port: aPortNumber.
+	client := self connection: connection.
+	connection open.
+	^ client
 ]
 
 { #category : 'instance creation' }
@@ -47,6 +61,21 @@ GLSPClient >> closeDiagram: aClientDiagram [
 	self request: 'disposeClientSession' params: (Dictionary new
 			 at: 'clientSessionId' put: aClientDiagram id;
 			 yourself)
+]
+
+{ #category : 'json-rpc' }
+GLSPClient >> connection [
+
+	^ connection
+]
+
+{ #category : 'json-rpc' }
+GLSPClient >> connectionClosed [
+	"The server closed the connection: the pending requests fail now, without waiting for their timeout"
+
+	mutex critical: [
+			closed := true.
+			pending do: [ :each | each signal ] ]
 ]
 
 { #category : 'glsp' }
@@ -82,6 +111,12 @@ GLSPClient >> initializeServer [
 GLSPClient >> isInitialized [
 
 	^ serverActions notNil
+]
+
+{ #category : 'json-rpc' }
+GLSPClient >> lastError [
+
+	^ lastError
 ]
 
 { #category : 'json-rpc' }
@@ -136,6 +171,14 @@ GLSPClient >> receiveActionMessage: anActionMessage [
 ]
 
 { #category : 'json-rpc' }
+GLSPClient >> receiveFailed: anError on: aJSONString [
+	"Handling a message of the server failed. Keep the error for inspection, the next messages are still handled"
+
+	lastError := anError.
+	anError freeze
+]
+
+{ #category : 'json-rpc' }
 GLSPClient >> receiveResponse: aDictionary [
 
 	| id |
@@ -147,21 +190,23 @@ GLSPClient >> receiveResponse: aDictionary [
 
 { #category : 'json-rpc' }
 GLSPClient >> request: aMethodName params: params [
-	"Send a request and answer its result. Signal a GLSPClientError on an error response or without response in time"
+	"Send a request and answer its result. Signal a GLSPClientError on an error response, without response in time, or when the connection is closed"
 
 	| id semaphore message response |
+	closed == true ifTrue: [ GLSPClientError signal: 'Connection to the GLSP server closed' ].
 	id := mutex critical: [ nextId := nextId + 1 ].
 	semaphore := Semaphore new.
 	mutex critical: [ pending at: id put: semaphore ].
 	message := self message: aMethodName params: params.
 	message at: 'id' put: id.
-	connection send: (STONJSON toString: message).
+	[ connection send: (STONJSON toString: message) ] ifCurtailed: [ mutex critical: [ pending removeKey: id ifAbsent: [ ] ] ].
 	(semaphore waitTimeoutSeconds: self timeout) ifTrue: [
 			mutex critical: [ pending removeKey: id ifAbsent: [ ] ].
 			GLSPClientError signal: 'No response to ' , aMethodName ].
 	response := mutex critical: [
 			            pending removeKey: id ifAbsent: [ ].
-			            responses removeKey: id ].
+			            responses removeKey: id ifAbsent: [ nil ] ].
+	response ifNil: [ GLSPClientError signal: 'Connection to the GLSP server closed during ' , aMethodName ].
 	response
 		at: 'error'
 		ifPresent: [ :error | GLSPClientError signal: aMethodName , ': ' , (error at: 'message' ifAbsent: [ error printString ]) ].
@@ -197,7 +242,12 @@ GLSPClient >> shutdown [
 
 { #category : 'json-rpc' }
 GLSPClient >> timeout [
-	"Seconds to wait for the response to a request"
+	"Seconds to wait for an answer of the server"
 
-	^ 10
+	^ timeout ifNil: [ 10 ]
+]
+
+{ #category : 'json-rpc' }
+GLSPClient >> timeout: aNumberOfSeconds [
+	timeout := aNumberOfSeconds
 ]

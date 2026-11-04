@@ -69,6 +69,13 @@ GLSPClientDiagram >> dispatch: anAction [
 	client sendAction: anAction to: self
 ]
 
+{ #category : 'actions' }
+GLSPClientDiagram >> dispatch: anAction andWaitFor: anActionKind [
+	"Dispatch anAction (e.g. an operation) and answer the next action of anActionKind sent by the server (e.g. 'setDirtyState')"
+
+	^ self waitForActionSuchThat: [ :action | action kind = anActionKind ] during: [ self dispatch: anAction ]
+]
+
 { #category : 'accessing' }
 GLSPClientDiagram >> edgeHints [
 
@@ -134,36 +141,47 @@ GLSPClientDiagram >> redo [
 ]
 
 { #category : 'actions' }
+GLSPClientDiagram >> request: aRequestAction [
+	"Dispatch aRequestAction and answer the response of the server (the action with the same responseId)"
+
+	| requestId |
+	requestId := aRequestAction requestId ifNil: [
+			             aRequestAction
+				             requestId: self newRequestId;
+				             requestId ].
+	^ self
+		  waitForActionSuchThat: [ :action | (action respondsTo: #responseId) and: [ action responseId = requestId ] ]
+		  during: [ self dispatch: aRequestAction ]
+]
+
+{ #category : 'actions' }
 GLSPClientDiagram >> requestModel: anUri [
+	"Ask the server for the model of anUri and wait for it"
 
 	sourceUri := anUri.
-	self dispatch: (GLSPRequestModelAction new
-			 requestId: self newRequestId;
-			 options: (Dictionary new
-					  at: 'sourceUri' put: anUri;
-					  at: 'diagramType' put: diagramType;
-					  yourself);
-			 yourself)
+	^ self request: (GLSPRequestModelAction new
+			   options: (Dictionary new
+					    at: 'sourceUri' put: anUri;
+					    at: 'diagramType' put: diagramType;
+					    yourself);
+			   yourself)
 ]
 
 { #category : 'actions' }
 GLSPClientDiagram >> requestToolPalette [
 
-	self dispatch: (GLSPRequestContextActions new
-			 requestId: self newRequestId;
-			 contextId: 'tool-palette';
-			 editorContext: (Dictionary new
-					  at: 'selectedElementIds' put: #(  );
-					  yourself);
-			 yourself)
+	^ self request: (GLSPRequestContextActions new
+			   contextId: 'tool-palette';
+			   editorContext: (Dictionary new
+					    at: 'selectedElementIds' put: #(  );
+					    yourself);
+			   yourself)
 ]
 
 { #category : 'actions' }
 GLSPClientDiagram >> requestTypeHints [
 
-	self dispatch: (GLSPRequestTypeHintsAction new
-			 requestId: self newRequestId;
-			 yourself)
+	^ self request: GLSPRequestTypeHintsAction new
 ]
 
 { #category : 'accessing' }
@@ -203,4 +221,24 @@ GLSPClientDiagram >> sourceUri [
 GLSPClientDiagram >> undo [
 
 	self dispatch: GLSPUndoAction new
+]
+
+{ #category : 'actions' }
+GLSPClientDiagram >> waitForActionSuchThat: aBlock during: anActionBlock [
+	"Evaluate anActionBlock, then wait until an action received from the server satisfies aBlock and answer it. Signal a GLSPClientError after the timeout of the client"
+
+	| received semaphore subscription |
+	semaphore := Semaphore new.
+	subscription := announcer
+		                when: GLSPClientDiagramChanged
+		                do: [ :announcement |
+				                (received isNil and: [ aBlock value: announcement action ]) ifTrue: [
+						                received := announcement action.
+						                semaphore signal ] ]
+		                for: self.
+	[
+		anActionBlock value.
+		(semaphore waitTimeoutSeconds: client timeout) ifTrue: [ GLSPClientError signal: 'No answer from the GLSP server' ] ] ensure: [
+		announcer removeSubscription: subscription ].
+	^ received
 ]

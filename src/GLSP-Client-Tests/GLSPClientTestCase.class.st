@@ -19,6 +19,13 @@ GLSPClientTestCase class >> isAbstract [
 ]
 
 { #category : 'running' }
+GLSPClientTestCase >> newClient [
+	"A client connected to my server"
+
+	^ GLSPClient loopbackOn: server
+]
+
+{ #category : 'running' }
 GLSPClientTestCase >> openModel [
 
 	| diagram |
@@ -38,7 +45,7 @@ GLSPClientTestCase >> setUp [
 	server := GLSPServer new
 		          registerDiagramModule: GLSPTaskListDiagramModule new;
 		          yourself.
-	client := GLSPClient loopbackOn: server
+	client := self newClient
 ]
 
 { #category : 'running' }
@@ -46,4 +53,12 @@ GLSPClientTestCase >> tearDown [
 
 	file ifNotNil: [ file ensureDelete ].
 	super tearDown
+]
+
+{ #category : 'running' }
+GLSPClientTestCase >> waitUntil: aBlock [
+
+	| deadline |
+	deadline := DateAndTime now + 5 seconds.
+	[ aBlock value or: [ DateAndTime now > deadline ] ] whileFalse: [ 20 milliSeconds wait ]
 ]

@@ -91,11 +91,3 @@ GLSPBlocEditorTest >> testTheWindowIsTitledAfterTheModel [
 	self openEditor.
 	self assert: (space title includesSubstring: file basename)
 ]
-
-{ #category : 'tests' }
-GLSPBlocEditorTest >> waitUntil: aBlock [
-
-	| deadline |
-	deadline := DateAndTime now + 5 seconds.
-	[ aBlock value or: [ DateAndTime now > deadline ] ] whileFalse: [ 20 milliSeconds wait ]
-]
