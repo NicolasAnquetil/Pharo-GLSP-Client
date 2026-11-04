@@ -35,3 +35,14 @@ Packages: `GLSP-Client` (protocol client, no Bloc), `GLSP-Client-Bloc` (renderin
 - Over a socket, actions are asynchronous: `GLSPClientDiagram >> request:` answers the response action (same `responseId`),
   `dispatch:andWaitFor:` waits for an action kind; `requestModel:`, `requestTypeHints`, `requestToolPalette` wait for their response.
 - `GLSPSocketClientTest` reruns all the client tests through a real socket (server of the image on a free port).
+
+## Client step 7 — Eclipse GLSP Java server ✅ 11 new tests (65 client tests)
+- Interop target: the Workflow example server of Eclipse GLSP (Java, 2.8.0, from Maven Central), on a plain socket
+  (`interop/start-workflow-server.sh`). Handshake and serverActions worked as is.
+- Found by probing: the server needs the client to compute the layout. It sends `requestBounds` only to clients declaring that
+  kind, and the model only after `computedBounds`. Without it, the model never comes.
+- `GLSPRequestBoundsAction`, `GLSPComputedBoundsAction`; the client diagram answers with a pluggable bounds computer,
+  `GLSPGModelBoundsComputer` by default (the sizes and positions already in the GModel).
+- `GLSPEclipseWorkflowServerTest` (skipped without server): initialize, model, type hints and palette, create, delete, undo, save.
+- The full example1.wf displays in the Bloc editor, with the Workflow tool palette.
+- Known gap: elements created on the server come without size, and the GModel computer has none to give.
