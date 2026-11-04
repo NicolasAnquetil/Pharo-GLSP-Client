@@ -31,12 +31,37 @@ GLSPBlocEditorTest >> tearDown [
 ]
 
 { #category : 'tests' }
+GLSPBlocEditorTest >> testCloseActionsRunAfterTheDiagramIsClosed [
+
+	| editor diagram sessionsWhenRun |
+	editor := self openEditor.
+	diagram := editor diagram.
+	editor whenClosedDo: [ sessionsWhenRun := server sessions size ].
+	space close.
+	self waitUntil: [ sessionsWhenRun notNil ].
+	self assert: sessionsWhenRun equals: 0
+]
+
+{ #category : 'tests' }
 GLSPBlocEditorTest >> testClosingTheWindowClosesTheDiagram [
 
 	self openEditor.
 	space close.
 	self waitUntil: [ server sessions isEmpty ].
 	self assert: server sessions isEmpty.
+	self assert: client diagrams isEmpty
+]
+
+{ #category : 'tests' }
+GLSPBlocEditorTest >> testClosingTheWindowWhenTheServerFailsDoesNotSignal [
+	"The server does not answer any more: disposing the session fails, closing the window must not"
+
+	| editor |
+	editor := self openEditor.
+	client setConnection: GLSPRecordingClientConnection new.
+	client timeout: 0.1.
+	editor windowClosed.
+	self assert: editor diagram isNil.
 	self assert: client diagrams isEmpty
 ]
 

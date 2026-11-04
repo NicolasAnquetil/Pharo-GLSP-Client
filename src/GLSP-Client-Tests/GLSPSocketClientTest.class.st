@@ -58,6 +58,17 @@ GLSPSocketClientTest >> testClientShutdownEndsTheServerConnection [
 ]
 
 { #category : 'tests - socket' }
+GLSPSocketClientTest >> testClosingADiagramAfterTheConnectionIsLost [
+
+	| diagram |
+	diagram := self openModel.
+	launcher stop.
+	self waitUntil: [ client connection isConnected not ].
+	diagram close.
+	self deny: (client diagrams includes: diagram)
+]
+
+{ #category : 'tests - socket' }
 GLSPSocketClientTest >> testConnectingWithoutServerSignalsAClientError [
 
 	self should: [ GLSPClient host: 'localhost' port: self freePort ] raise: GLSPClientError

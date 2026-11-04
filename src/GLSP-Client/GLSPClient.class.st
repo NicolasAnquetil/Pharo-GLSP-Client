@@ -56,8 +56,10 @@ GLSPClient class >> loopbackOn: aGLSPServer [
 
 { #category : 'glsp' }
 GLSPClient >> closeDiagram: aClientDiagram [
+	"Close the client session of aClientDiagram. Once the connection is closed, the server has no session to dispose any more"
 
 	diagrams removeKey: aClientDiagram id ifAbsent: [ ^ self ].
+	closed == true ifTrue: [ ^ self ].
 	self request: 'disposeClientSession' params: (Dictionary new
 			 at: 'clientSessionId' put: aClientDiagram id;
 			 yourself)
