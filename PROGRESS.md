@@ -54,3 +54,23 @@ Packages: `GLSP-Client` (protocol client, no Bloc), `GLSP-Client-Bloc` (renderin
   closing a window never signals (failures go to the Transcript).
 - A closed connection has no session to dispose: `GLSPClient >> closeDiagram:` does not contact the server any more.
 - `GLSPBlocEditor exampleWorkflow` / `openWorkflow:host:port:` open a workflow model of the Eclipse GLSP Java server.
+
+## Client step 8 — Bloc bounds computer ✅ 16 new tests
+- `GLSPBlocBoundsComputer` answers `requestBounds` by laying out the Bloc views offscreen; a `GLSPBlocDiagramElement`
+  following a diagram installs it (with its view registry).
+- Node views lay out as the Sprotty layouts of the Eclipse GLSP clients: hbox/vbox with default paddings 5, gaps 1 (`interspace:`),
+  `layoutOptions` overrides; labels measured with their line height (`labelMeasurement`). On the Workflow sample, this gives
+  exactly the server's positions (icon 5@5, label 31@7) and heights.
+- Containers without layout: `GLSPBlocAbsoluteLayout` (children at their GModel position, a fit-content container encloses them);
+  BlBasicLayout, BlFitLayout and BlWrapAroundChildrenLayout did not fit.
+- `layoutOptions` added to `GLSPGShapeElement` (server project: slot, JSON writing; client: reading).
+- Against the Java server, a created task now gets a size (`GLSPBlocEclipseWorkflowServerTest`).
+- Remaining: Workflow icons have no content, so they measure 0×0 (the Eclipse client draws them 25×20).
+
+## Client step 9 — Workflow views ✅ 6 new tests (157 tests in all)
+- New packages `GLSP-Client-Workflow` (+ `-Tests`), group `Workflow` of the baseline: Bloc views of the Workflow example of
+  Eclipse GLSP, registered by type (`GLSPWorkflowViews registerOn: aRegistry`): tasks colored by kind (manual / automated),
+  icons 25×20 with an M/A mark, diamonds for decision/merge nodes, dark bars for fork/join nodes.
+- With them, a task created on the Java server gets the layout of the Eclipse client: icon 5@5 25×20, label 31@7, height 30.
+- `GLSPBlocEditor exampleWorkflow` / `openWorkflow:host:port:` moved to `GLSP-Client-Workflow` and use these views.
+- Known limit: edges are clipped on the bounding box of the diamonds, not on their outline.
