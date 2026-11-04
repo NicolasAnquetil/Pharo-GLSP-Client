@@ -40,7 +40,7 @@ GLSPEclipseWorkflowServerTest >> openModel [
 	^ diagram
 ]
 
-{ #category : 'tests' }
+{ #category : 'running' }
 GLSPEclipseWorkflowServerTest >> setUp [
 
 	super setUp.
@@ -51,7 +51,7 @@ GLSPEclipseWorkflowServerTest >> setUp [
 	file writeStreamDo: [ :stream | stream nextPutAll: self class sampleModel ]
 ]
 
-{ #category : 'tests' }
+{ #category : 'running' }
 GLSPEclipseWorkflowServerTest >> tearDown [
 
 	diagram ifNotNil: [
@@ -91,11 +91,10 @@ GLSPEclipseWorkflowServerTest >> testInitialize [
 
 { #category : 'tests' }
 GLSPEclipseWorkflowServerTest >> testRequestModel [
-
 	self openModel.
 	self assert: diagram root class equals: GLSPGModelRoot.
 	self
-		assert: (diagram root children collect: [ :each | each id ]) asSet
+		assert: (diagram root children collect: [ :each | each id ] as: Set)
 		equals: #( 'task_Push' 'fork_1' 'task_ChkTp' 'edge_task_Push_fork_1' 'edge_fork1_task_ChkTp' ) asSet.
 	self assert: (diagram root elementAt: 'task_Push_label') text equals: 'Push'.
 	self assert: (diagram root elementAt: 'edge_fork1_task_ChkTp') class equals: GLSPGEdge
@@ -108,7 +107,7 @@ GLSPEclipseWorkflowServerTest >> testTypeHintsAndToolPalette [
 	diagram requestTypeHints.
 	self assert: ((diagram shapeHints collect: [ :each | each at: 'elementTypeId' ]) includes: 'task:manual').
 	diagram requestToolPalette.
-	self assert: diagram paletteItems notEmpty
+	self assert: diagram paletteItems isNotEmpty
 ]
 
 { #category : 'tests' }
@@ -125,8 +124,8 @@ GLSPEclipseWorkflowServerTest >> testUndoAndSave [
 	self waitUntil: [ (diagram root elementAt: 'task_ChkTp') isNil ].
 	self assert: (diagram root elementAt: 'task_ChkTp') isNil.
 	diagram dispatch: GLSPUndoAction new andWaitFor: 'setDirtyState'.
-	self waitUntil: [ (diagram root elementAt: 'task_ChkTp') notNil ].
-	self assert: (diagram root elementAt: 'task_ChkTp') notNil.
+	self waitUntil: [ (diagram root elementAt: 'task_ChkTp') isNotNil ].
+	self assert: (diagram root elementAt: 'task_ChkTp') isNotNil.
 	diagram dispatch: GLSPSaveModelAction new andWaitFor: 'setDirtyState'.
 	self deny: diagram isDirty
 ]

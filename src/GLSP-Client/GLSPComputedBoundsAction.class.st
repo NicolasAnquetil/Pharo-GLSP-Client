@@ -3,9 +3,8 @@ The answer to a GLSPRequestBoundsAction: the bounds computed by the client, as a
 "
 Class {
 	#name : 'GLSPComputedBoundsAction',
-	#superclass : 'GLSPAction',
+	#superclass : 'GLSPResponseAction',
 	#instVars : [
-		'responseId',
 		'bounds',
 		'revision'
 	],
@@ -30,30 +29,6 @@ GLSPComputedBoundsAction >> bounds [
 GLSPComputedBoundsAction >> bounds: aCollection [
 
 	bounds := aCollection
-]
-
-{ #category : 'accessing' }
-GLSPComputedBoundsAction >> isResponse [
-
-	^ true
-]
-
-{ #category : 'accessing' }
-GLSPComputedBoundsAction >> isResponseAction [
-
-	^ true
-]
-
-{ #category : 'accessing' }
-GLSPComputedBoundsAction >> responseId [
-
-	^ responseId
-]
-
-{ #category : 'accessing' }
-GLSPComputedBoundsAction >> responseId: aString [
-
-	responseId := aString
 ]
 
 { #category : 'accessing' }

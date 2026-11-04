@@ -222,13 +222,12 @@ GLSPBlocDiagramElementTest >> testUpdateMovesTheEdges [
 
 { #category : 'tests - update' }
 GLSPBlocDiagramElementTest >> testUpdateRemovesAndAddsViews [
-
 	| element |
 	element := self display: self sampleRoot.
 	element root: self movedRoot.
 	self assert: (element viewAt: 'task2') isNil.
 	self assert: (element viewAt: 'transition1') isNil.
-	self assert: (element viewAt: 'task3') notNil.
+	self assert: (element viewAt: 'task3') isNotNil.
 	self assert: (element viewAt: 'task3') parent equals: element.
-	self assert: (element children select: [ :each | each class = GLSPBlocNodeView ]) size equals: 2
+	self assert: (element children count: [ :each | each class = GLSPBlocNodeView ]) equals: 2
 ]

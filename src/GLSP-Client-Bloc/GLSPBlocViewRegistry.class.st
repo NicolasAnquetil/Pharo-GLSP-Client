@@ -12,16 +12,7 @@ Class {
 	#tag : 'Core'
 }
 
-{ #category : 'accessing' }
-GLSPBlocViewRegistry >> defaultViewClassFor: aGModelElement [
-
-	(aGModelElement isKindOf: GLSPGLabel) ifTrue: [ ^ GLSPBlocLabelView ].
-	(aGModelElement isKindOf: GLSPGEdge) ifTrue: [ ^ GLSPBlocEdgeView ].
-	(aGModelElement isKindOf: GLSPGShapeElement) ifTrue: [ ^ GLSPBlocNodeView ].
-	^ nil
-]
-
-{ #category : 'accessing' }
+{ #category : 'initialization' }
 GLSPBlocViewRegistry >> initialize [
 
 	super initialize.
@@ -38,5 +29,7 @@ GLSPBlocViewRegistry >> register: aViewClass forType: aTypeString [
 GLSPBlocViewRegistry >> viewClassFor: aGModelElement [
 	"The view class of aGModelElement, nil if it has no view"
 
-	^ viewClassesByType at: aGModelElement type ifAbsent: [ self defaultViewClassFor: aGModelElement ]
+	^ viewClassesByType
+		at: aGModelElement type
+		ifAbsent: [ aGModelElement defaultBlocViewClass ]
 ]

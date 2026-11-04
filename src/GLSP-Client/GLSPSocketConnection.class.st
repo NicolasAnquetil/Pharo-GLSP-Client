@@ -51,7 +51,7 @@ GLSPSocketConnection >> host [
 { #category : 'connection' }
 GLSPSocketConnection >> isConnected [
 
-	^ reader notNil
+	^ reader isNotNil
 ]
 
 { #category : 'connection' }
@@ -60,12 +60,14 @@ GLSPSocketConnection >> open [
 
 	| stream |
 	stream := [ SocketStream openConnectionToHostNamed: host port: port ]
-		          on: NetworkError
-		          do: [ :e | GLSPClientError signal: 'Cannot connect to the GLSP server on ' , host , ':' , port printString ].
+		on: NetworkError
+		do: [ :e | GLSPClientError signal: ('Cannot connect to the GLSP server on {1}:{2}' format: { host. port }) ].
 	stream binary.
 	transport := GLSPStreamTransport in: stream out: stream.
 	transport waitForever: true.
-	reader := [ self readLoop ] forkAt: Processor lowIOPriority named: 'GLSP client reader ' , host , ':' , port printString
+	reader := [ self readLoop ]
+		forkAt: Processor lowIOPriority
+		named: ('GLSP client reader {1}:{2}' format: { host. port })
 ]
 
 { #category : 'connection' }
@@ -80,7 +82,7 @@ GLSPSocketConnection >> readLoop [
 
 	[
 		| message |
-		[ (message := transport next) notNil ] whileTrue: [ self deliver: message ] ] ensure: [
+		[ (message := transport next) isNotNil ] whileTrue: [ self deliver: message ] ] ensure: [
 			reader := nil.
 			transport close.
 			client connectionClosed ]

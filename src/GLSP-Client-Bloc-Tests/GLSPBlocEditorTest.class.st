@@ -34,11 +34,12 @@ GLSPBlocEditorTest >> tearDown [
 GLSPBlocEditorTest >> testCloseActionsRunAfterTheDiagramIsClosed [
 
 	| editor diagram sessionsWhenRun |
+	sessionsWhenRun := nil.
 	editor := self openEditor.
 	diagram := editor diagram.
 	editor whenClosedDo: [ sessionsWhenRun := server sessions size ].
 	space close.
-	self waitUntil: [ sessionsWhenRun notNil ].
+	self waitUntil: [ sessionsWhenRun isNotNil ].
 	self assert: sessionsWhenRun equals: 0
 ]
 

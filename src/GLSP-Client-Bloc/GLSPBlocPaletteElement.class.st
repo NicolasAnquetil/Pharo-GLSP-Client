@@ -59,16 +59,15 @@ GLSPBlocPaletteElement >> diagram: aClientDiagramOrNil [
 { #category : 'accessing' }
 GLSPBlocPaletteElement >> diagramChanged: aClientDiagramChanged [
 
-	aClientDiagramChanged action kind = 'setContextActions' ifTrue: [ self inUIProcessDo: [ self refresh ] ]
+	aClientDiagramChanged action kind = 'setContextActions' ifTrue: [ self applyInUIProcess: [ self refresh ] ]
 ]
 
 { #category : 'accessing' }
 GLSPBlocPaletteElement >> groupLabels [
-
-	^ (groupViews collect: [ :each | each text asString ]) asArray
+	^ groupViews collect: [ :each | each text asString ] as: Array
 ]
 
-{ #category : 'accessing' }
+{ #category : 'initialization' }
 GLSPBlocPaletteElement >> initialize [
 
 	super initialize.
@@ -85,20 +84,18 @@ GLSPBlocPaletteElement >> initialize [
 
 { #category : 'accessing' }
 GLSPBlocPaletteElement >> itemLabels [
-
-	^ (itemViews collect: [ :each | each text asString ]) asArray
+	^ itemViews collect: [ :each | each text asString ] as: Array
 ]
 
 { #category : 'building' }
 GLSPBlocPaletteElement >> refresh [
-
 	self removeChildren.
 	groupViews removeAll.
 	itemViews removeAll.
 	diagram ifNil: [ ^ self ].
 	(self sorted: diagram paletteItems) do: [ :group |
-			groupViews add: (self addText: (group at: 'label') asRopedText bold).
-			(self sorted: (group at: 'children' ifAbsent: [ #(  ) ])) do: [ :item | itemViews add: (self addItemView: item) ] ]
+		groupViews add: (self addText: (group at: 'label') asRopedText bold).
+		itemViews addAll: ((self sorted: (group at: 'children' ifAbsent: [ #() ])) collect: [ :item | self addItemView: item ]) ]
 ]
 
 { #category : 'accessing' }

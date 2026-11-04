@@ -59,7 +59,7 @@ GLSPClient >> closeDiagram: aClientDiagram [
 	"Close the client session of aClientDiagram. Once the connection is closed, the server has no session to dispose any more"
 
 	diagrams removeKey: aClientDiagram id ifAbsent: [ ^ self ].
-	closed == true ifTrue: [ ^ self ].
+	closed ifTrue: [ ^ self ].
 	self request: 'disposeClientSession' params: (Dictionary new
 			 at: 'clientSessionId' put: aClientDiagram id;
 			 yourself)
@@ -88,13 +88,13 @@ GLSPClient >> diagrams [
 
 { #category : 'initialization' }
 GLSPClient >> initialize [
-
 	super initialize.
 	nextId := 0.
 	pending := Dictionary new.
 	responses := Dictionary new.
 	diagrams := Dictionary new.
-	mutex := Mutex new
+	mutex := Mutex new.
+	closed := false
 ]
 
 { #category : 'glsp' }
@@ -112,7 +112,7 @@ GLSPClient >> initializeServer [
 { #category : 'glsp' }
 GLSPClient >> isInitialized [
 
-	^ serverActions notNil
+	^ serverActions isNotNil
 ]
 
 { #category : 'json-rpc' }
@@ -182,37 +182,55 @@ GLSPClient >> receiveFailed: anError on: aJSONString [
 
 { #category : 'json-rpc' }
 GLSPClient >> receiveResponse: aDictionary [
+	"A response nobody waits for any more (its request timed out) is ignored"
 
 	| id |
 	id := aDictionary at: 'id' ifAbsent: [ ^ self ].
 	mutex critical: [
-			responses at: id put: aDictionary.
-			(pending at: id ifAbsent: [ nil ]) ifNotNil: [ :semaphore | semaphore signal ] ]
+			pending at: id ifPresent: [ :semaphore |
+					responses at: id put: aDictionary.
+					semaphore signal ] ]
 ]
 
 { #category : 'json-rpc' }
 GLSPClient >> request: aMethodName params: params [
 	"Send a request and answer its result. Signal a GLSPClientError on an error response, without response in time, or when the connection is closed"
 
-	| id semaphore message response |
-	closed == true ifTrue: [ GLSPClientError signal: 'Connection to the GLSP server closed' ].
-	id := mutex critical: [ nextId := nextId + 1 ].
-	semaphore := Semaphore new.
-	mutex critical: [ pending at: id put: semaphore ].
-	message := self message: aMethodName params: params.
-	message at: 'id' put: id.
-	[ connection send: (STONJSON toString: message) ] ifCurtailed: [ mutex critical: [ pending removeKey: id ifAbsent: [ ] ] ].
-	(semaphore waitTimeoutSeconds: self timeout) ifTrue: [
-			mutex critical: [ pending removeKey: id ifAbsent: [ ] ].
-			GLSPClientError signal: 'No response to ' , aMethodName ].
-	response := mutex critical: [
-			            pending removeKey: id ifAbsent: [ ].
-			            responses removeKey: id ifAbsent: [ nil ] ].
-	response ifNil: [ GLSPClientError signal: 'Connection to the GLSP server closed during ' , aMethodName ].
-	response
-		at: 'error'
-		ifPresent: [ :error | GLSPClientError signal: aMethodName , ': ' , (error at: 'message' ifAbsent: [ error printString ]) ].
+	| response |
+	response := self responseTo: aMethodName params: params.
+	response at: 'error' ifPresent: [ :error |
+			GLSPClientError signal: ('{1}: {2}' format: {
+						 aMethodName.
+						 (error at: 'message' ifAbsent: [ error printString ]) }) ].
 	^ response at: 'result' ifAbsent: [ nil ]
+]
+
+{ #category : 'json-rpc' }
+GLSPClient >> responseTo: aMethodName params: params [
+	"Send a request and wait for its response (a JSON object)"
+
+	| id semaphore |
+	closed ifTrue: [ GLSPClientError signal: 'Connection to the GLSP server closed' ].
+	semaphore := Semaphore new.
+	id := mutex critical: [
+			      nextId := nextId + 1.
+			      pending at: nextId put: semaphore.
+			      nextId ].
+	[
+		self send: aMethodName params: params id: id.
+		(semaphore waitTimeoutSeconds: self timeout) ifTrue: [ GLSPClientError signal: ('No response to {1}' format: { aMethodName }) ] ]
+		ensure: [ mutex critical: [ pending removeKey: id ifAbsent: [ ] ] ].
+	^ (mutex critical: [ responses removeKey: id ifAbsent: [ nil ] ]) ifNil: [
+		  GLSPClientError signal: ('Connection to the GLSP server closed during {1}' format: { aMethodName }) ]
+]
+
+{ #category : 'json-rpc' }
+GLSPClient >> send: aMethodName params: params id: anId [
+
+	| message |
+	message := self message: aMethodName params: params.
+	message at: 'id' put: anId.
+	connection send: (STONJSON toString: message)
 ]
 
 { #category : 'glsp' }

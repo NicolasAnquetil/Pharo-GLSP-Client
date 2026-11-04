@@ -3,9 +3,8 @@ Sent by a server that needs the client to compute the layout (e.g. the Eclipse G
 "
 Class {
 	#name : 'GLSPRequestBoundsAction',
-	#superclass : 'GLSPAction',
+	#superclass : 'GLSPRequestAction',
 	#instVars : [
-		'requestId',
 		'newRoot'
 	],
 	#category : 'GLSP-Client-Actions',
@@ -20,12 +19,6 @@ GLSPRequestBoundsAction class >> kind [
 ]
 
 { #category : 'accessing' }
-GLSPRequestBoundsAction >> isRequest [
-
-	^ true
-]
-
-{ #category : 'accessing' }
 GLSPRequestBoundsAction >> newRoot [
 	"The model to lay out (JSON)"
 
@@ -36,16 +29,4 @@ GLSPRequestBoundsAction >> newRoot [
 GLSPRequestBoundsAction >> newRoot: aDictionary [
 
 	newRoot := aDictionary
-]
-
-{ #category : 'accessing' }
-GLSPRequestBoundsAction >> requestId [
-
-	^ requestId
-]
-
-{ #category : 'accessing' }
-GLSPRequestBoundsAction >> requestId: aString [
-
-	requestId := aString
 ]

@@ -117,14 +117,13 @@ GLSPClientTest >> testTwoDiagramsAreIndependent [
 
 { #category : 'tests' }
 GLSPClientTest >> testTypeHintsAndToolPalette [
-
 	| diagram |
 	diagram := self openModel.
 	diagram requestTypeHints.
-	self assert: (diagram shapeHints collect: [ :each | each at: 'elementTypeId' ]) asArray equals: #( 'task' ).
-	self assert: (diagram edgeHints collect: [ :each | each at: 'elementTypeId' ]) asArray equals: #( 'transition' ).
+	self assert: (diagram shapeHints collect: [ :each | each at: 'elementTypeId' ] as: Array) equals: #( 'task' ).
+	self assert: (diagram edgeHints collect: [ :each | each at: 'elementTypeId' ] as: Array) equals: #( 'transition' ).
 	diagram requestToolPalette.
-	self assert: (diagram paletteItems collect: [ :each | each at: 'label' ]) asArray equals: #( 'Nodes' 'Edges' )
+	self assert: (diagram paletteItems collect: [ :each | each at: 'label' ] as: Array) equals: #( 'Nodes' 'Edges' )
 ]
 
 { #category : 'tests' }

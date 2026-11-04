@@ -9,7 +9,7 @@ Trait {
 }
 
 { #category : 'ui process' }
-GLSPTBlocUIProcess >> inUIProcessDo: aBlock [
+GLSPTBlocUIProcess >> applyInUIProcess: aBlock [
 	"In an open space, changes must happen in the UI process of Bloc: run aBlock now if it is the active process, else at the next pulse"
 
 	self isAttachedToSceneGraph

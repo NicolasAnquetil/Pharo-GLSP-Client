@@ -24,13 +24,19 @@ GLSPGModelElement class >> fromJSON: aDictionary [
 ]
 
 { #category : '*GLSP-Client' }
-GLSPGModelElement >> readJSON: aDictionary [
+GLSPGModelElement >> isShape [
+	"Whether I have a position and a size"
 
+	^ false
+]
+
+{ #category : '*GLSP-Client' }
+GLSPGModelElement >> readJSON: aDictionary [
 	id := aDictionary at: 'id' ifAbsent: [ nil ].
 	type := aDictionary at: 'type' ifAbsent: [ nil ].
 	aDictionary at: 'cssClasses' ifPresent: [ :classes | cssClasses := classes asOrderedCollection ].
 	aDictionary at: 'args' ifPresent: [ :dictionary | args := dictionary ].
-	(aDictionary at: 'children' ifAbsent: [ #(  ) ]) do: [ :each | self add: (GLSPGModelElement fromJSON: each) ].
+	self addAll: ((aDictionary at: 'children' ifAbsent: [ #(  ) ]) collect: [ :each | self class fromJSON: each ]).
 	self readPropertiesFrom: aDictionary
 ]
 

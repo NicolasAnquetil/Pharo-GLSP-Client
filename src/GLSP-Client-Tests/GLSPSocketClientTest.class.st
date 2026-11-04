@@ -51,7 +51,7 @@ GLSPSocketClientTest >> tearDown [
 GLSPSocketClientTest >> testClientShutdownEndsTheServerConnection [
 
 	self openModel.
-	self waitUntil: [ launcher connections notEmpty ].
+	self waitUntil: [ launcher connections isNotEmpty ].
 	client shutdown.
 	self waitUntil: [ launcher connections isEmpty ].
 	self assert: launcher connections isEmpty
@@ -72,6 +72,18 @@ GLSPSocketClientTest >> testClosingADiagramAfterTheConnectionIsLost [
 GLSPSocketClientTest >> testConnectingWithoutServerSignalsAClientError [
 
 	self should: [ GLSPClient host: 'localhost' port: self freePort ] raise: GLSPClientError
+]
+
+{ #category : 'tests - socket' }
+GLSPSocketClientTest >> testLateResponsesAreForgotten [
+	"A response arriving after the timeout of its request is not kept"
+
+	client receiveResponse: (Dictionary new
+			 at: 'jsonrpc' put: '2.0';
+			 at: 'id' put: 999;
+			 at: 'result' put: nil;
+			 yourself).
+	self assert: (client instVarNamed: #responses) isEmpty
 ]
 
 { #category : 'tests - socket' }

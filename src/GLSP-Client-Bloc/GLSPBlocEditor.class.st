@@ -142,7 +142,7 @@ GLSPBlocEditor >> diagram [
 { #category : 'client' }
 GLSPBlocEditor >> diagramChanged: aClientDiagramChanged [
 
-	aClientDiagramChanged action kind = 'setDirtyState' ifTrue: [ self inUIProcessDo: [ self updateTitle ] ]
+	aClientDiagramChanged action kind = 'setDirtyState' ifTrue: [ self applyInUIProcess: [ self updateTitle ] ]
 ]
 
 { #category : 'accessing' }
@@ -151,7 +151,7 @@ GLSPBlocEditor >> diagramElement [
 	^ diagramElement
 ]
 
-{ #category : 'accessing' }
+{ #category : 'initialization' }
 GLSPBlocEditor >> initialize [
 
 	super initialize.

@@ -47,6 +47,6 @@ GLSPGModelBoundsComputer >> positionOf: aGModelElement [
 GLSPGModelBoundsComputer >> sizeOf: aGModelElement [
 	"The size of aGModelElement, nil when it has none. Subclasses measure the elements"
 
-	(aGModelElement isKindOf: GLSPGShapeElement) ifFalse: [ ^ nil ].
+	aGModelElement isShape ifFalse: [ ^ nil ].
 	^ aGModelElement size
 ]

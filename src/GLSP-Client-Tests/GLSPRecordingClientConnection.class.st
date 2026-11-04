@@ -11,7 +11,7 @@ Class {
 	#package : 'GLSP-Client-Tests'
 }
 
-{ #category : 'connection' }
+{ #category : 'initialization' }
 GLSPRecordingClientConnection >> initialize [
 
 	super initialize.
@@ -34,6 +34,7 @@ GLSPRecordingClientConnection >> send: aJSONString [
 GLSPRecordingClientConnection >> sentActions [
 	"The JSON of the actions sent to the server"
 
-	^ (messages select: [ :each | (each at: 'method' ifAbsent: [ nil ]) = 'process' ]) collect: [ :each |
-		  (each at: 'params') at: 'action' ]
+	^ messages
+		select: [ :each | (each at: 'method' ifAbsent: [ nil ]) = 'process' ]
+		thenCollect: [ :each | (each at: 'params') at: 'action' ]
 ]

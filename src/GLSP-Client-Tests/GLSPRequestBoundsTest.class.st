@@ -28,7 +28,7 @@ GLSPRequestBoundsTest >> requestBoundsJSON [
 		  '{"kind":"requestBounds","requestId":"r1","newRoot":{"type":"graph","id":"root","revision":3,"children":[{"type":"task:manual","id":"n1","position":{"x":10,"y":20},"size":{"width":30,"height":40},"children":[{"type":"label:heading","id":"l1","text":"A","position":{"x":5,"y":5},"size":{"width":20,"height":10}}]},{"type":"task:manual","id":"n2"},{"type":"edge","id":"e1","sourceId":"n1","targetId":"n1"}]}}'
 ]
 
-{ #category : 'tests' }
+{ #category : 'running' }
 GLSPRequestBoundsTest >> setUp [
 
 	super setUp.
@@ -45,19 +45,12 @@ GLSPRequestBoundsTest >> testClientDeclaresRequestBounds [
 
 { #category : 'tests' }
 GLSPRequestBoundsTest >> testComputedBoundsOfTheShapesOfTheModel [
-
 	| bounds node |
 	bounds := (self receiveRequestBounds at: 'bounds') ifNil: [ #(  ) ].
-	self assert: (bounds collect: [ :each | each at: 'elementId' ]) asArray equals: #( 'n1' 'l1' ).
+	self assert: (bounds collect: [ :each | each at: 'elementId' ] as: Array) equals: #( 'n1' 'l1' ).
 	node := bounds first.
-	self assert: (node at: 'newSize') equals: (Dictionary new
-			 at: 'width' put: 30;
-			 at: 'height' put: 40;
-			 yourself).
-	self assert: (node at: 'newPosition') equals: (Dictionary new
-			 at: 'x' put: 10;
-			 at: 'y' put: 20;
-			 yourself)
+	self assert: (node at: 'newSize') equals: (Dictionary new at: 'width' put: 30; at: 'height' put: 40; yourself).
+	self assert: (node at: 'newPosition') equals: (Dictionary new at: 'x' put: 10; at: 'y' put: 20; yourself)
 ]
 
 { #category : 'tests' }

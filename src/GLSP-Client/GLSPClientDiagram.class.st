@@ -172,13 +172,10 @@ GLSPClientDiagram >> request: aRequestAction [
 	"Dispatch aRequestAction and answer the response of the server (the action with the same responseId)"
 
 	| requestId |
-	requestId := aRequestAction requestId ifNil: [
-			             aRequestAction
-				             requestId: self newRequestId;
-				             requestId ].
+	requestId := aRequestAction requestId ifNil: [ aRequestAction requestId: self newRequestId; requestId ].
 	^ self
-		  waitForActionSuchThat: [ :action | (action respondsTo: #responseId) and: [ action responseId = requestId ] ]
-		  during: [ self dispatch: aRequestAction ]
+		waitForActionSuchThat: [ :action | action isResponseAction and: [ action responseId = requestId ] ]
+		during: [ self dispatch: aRequestAction ]
 ]
 
 { #category : 'actions' }
@@ -255,6 +252,7 @@ GLSPClientDiagram >> waitForActionSuchThat: aBlock during: anActionBlock [
 	"Evaluate anActionBlock, then wait until an action received from the server satisfies aBlock and answer it. Signal a GLSPClientError after the timeout of the client"
 
 	| received semaphore subscription |
+	received := nil.
 	semaphore := Semaphore new.
 	subscription := announcer
 		                when: GLSPClientDiagramChanged

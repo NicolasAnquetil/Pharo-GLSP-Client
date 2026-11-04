@@ -23,10 +23,10 @@ GLSPBlocDiagramElement >> boundsOf: anId [
 
 	| element origin extent |
 	element := root elementAt: anId.
-	(element isKindOf: GLSPGShapeElement) ifFalse: [ ^ nil ].
+	(element isNotNil and: [ element isShape ]) ifFalse: [ ^ nil ].
 	origin := 0 @ 0.
 	element withAllParentsDo: [ :each |
-		(each isKindOf: GLSPGShapeElement) ifTrue: [ origin := origin + (each position ifNil: [ 0 @ 0 ]) ] ].
+		each isShape ifTrue: [ origin := origin + (each position ifNil: [ 0 @ 0 ]) ] ].
 	extent := element size ifNil: [ (self viewAt: anId) ifNil: [ 0 @ 0 ] ifNotNil: [ :view | view extent ] ].
 	^ origin extent: extent
 ]
@@ -52,16 +52,29 @@ GLSPBlocDiagramElement >> diagram: aClientDiagramOrNil [
 GLSPBlocDiagramElement >> diagramChanged: aClientDiagramChanged [
 
 	(#( 'setModel' 'updateModel' ) includes: aClientDiagramChanged action kind) ifFalse: [ ^ self ].
-	self inUIProcessDo: [ self root: diagram root ]
+	self applyInUIProcess: [ self root: diagram root ]
 ]
 
-{ #category : 'accessing' }
+{ #category : 'initialization' }
 GLSPBlocDiagramElement >> initialize [
 
 	super initialize.
 	registry := GLSPBlocViewRegistry new.
 	views := Dictionary new.
 	self background: Color white
+]
+
+{ #category : 'building' }
+GLSPBlocDiagramElement >> place: aView in: aParentElement [
+	"Edges are always my direct children: their points are in diagram coordinates"
+
+	| container |
+	container := aView isEdgeView
+		             ifTrue: [ self ]
+		             ifFalse: [ aParentElement ].
+	aView parent == container ifTrue: [ ^ self ].
+	aView removeFromParent.
+	container addChild: aView
 ]
 
 { #category : 'building' }
@@ -99,32 +112,19 @@ GLSPBlocDiagramElement >> synchronize [
 	| seen |
 	seen := Set new.
 	root ifNotNil: [ root children do: [ :each | self synchronizeViewOf: each in: self seen: seen ] ].
-	(views keys reject: [ :each | seen includes: each ]) do: [ :each | (views removeKey: each) removeFromParent ].
+	views keys do: [ :each | (seen includes: each) ifFalse: [ (views removeKey: each) removeFromParent ] ].
 	self updateEdges
 ]
 
 { #category : 'building' }
 GLSPBlocDiagramElement >> synchronizeViewOf: aGModelElement in: aParentElement seen: aSet [
-	"Update (or create) the view of aGModelElement and of its children. Edges are always my direct children: their points are in diagram coordinates"
+	"Update (or create) the view of aGModelElement and of its children"
 
-	| viewClass view container |
-	viewClass := (registry viewClassFor: aGModelElement) ifNil: [ ^ self ].
+	| view |
+	view := (self viewFor: aGModelElement) ifNil: [ ^ self ].
 	aSet add: aGModelElement id.
-	view := views at: aGModelElement id ifAbsent: [ nil ].
-	(view notNil and: [ view class ~= viewClass ]) ifTrue: [
-			view removeFromParent.
-			view := nil ].
-	view ifNil: [
-			view := viewClass new.
-			view id: aGModelElement id asSymbol.
-			views at: aGModelElement id put: view ].
 	view updateFrom: aGModelElement in: self.
-	container := view isEdgeView
-		             ifTrue: [ self ]
-		             ifFalse: [ aParentElement ].
-	view parent == container ifFalse: [
-			view removeFromParent.
-			container addChild: view ].
+	self place: view in: aParentElement.
 	aGModelElement children do: [ :each | self synchronizeViewOf: each in: view seen: aSet ]
 ]
 
@@ -139,6 +139,20 @@ GLSPBlocDiagramElement >> viewAt: anId [
 	"The view of the GModel element anId, or nil"
 
 	^ views at: anId ifAbsent: [ nil ]
+]
+
+{ #category : 'building' }
+GLSPBlocDiagramElement >> viewFor: aGModelElement [
+	"The view of aGModelElement: the current one if it still has the right class, else a new one. nil if aGModelElement has no view"
+
+	| viewClass view |
+	viewClass := (registry viewClassFor: aGModelElement) ifNil: [ ^ nil ].
+	view := views at: aGModelElement id ifAbsent: [ nil ].
+	view class = viewClass ifTrue: [ ^ view ].
+	view ifNotNil: [ view removeFromParent ].
+	view := viewClass new.
+	view id: aGModelElement id asSymbol.
+	^ views at: aGModelElement id put: view
 ]
 
 { #category : 'accessing' }
