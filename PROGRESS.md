@@ -27,3 +27,11 @@ Packages: `GLSP-Client` (protocol client, no Bloc), `GLSP-Client-Bloc` (renderin
   closing the window disposes the client session. `GLSPBlocEditor exampleTaskList` opens a demo.
 - `GLSPTBlocUIProcess`: changes coming from the server are applied in the UI process of Bloc (`BlSpace>>deferOrValue:`).
 - Tests show the spaces on `BlHeadlessHost`: no window, but the real Bloc UI process runs (`settle`).
+
+## Client step 6 — Socket connection ✅ 17 new tests (54 client tests)
+- `GLSPSocketConnection` (`GLSPClient host:port:`): TCP + Content-Length framing (reuses the server's `GLSPStreamTransport`),
+  a reader process delivers the server messages; an error on one message does not stop the reader (`lastError`).
+- The server closing the connection fails the pending requests at once; no server listening → `GLSPClientError`.
+- Over a socket, actions are asynchronous: `GLSPClientDiagram >> request:` answers the response action (same `responseId`),
+  `dispatch:andWaitFor:` waits for an action kind; `requestModel:`, `requestTypeHints`, `requestToolPalette` wait for their response.
+- `GLSPSocketClientTest` reruns all the client tests through a real socket (server of the image on a free port).
