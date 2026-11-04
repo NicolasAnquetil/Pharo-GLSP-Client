@@ -16,7 +16,8 @@ Class {
 		'edgeHints',
 		'paletteItems',
 		'announcer',
-		'sourceUri'
+		'sourceUri',
+		'boundsComputer'
 	],
 	#category : 'GLSP-Client-Core',
 	#package : 'GLSP-Client',
@@ -33,15 +34,40 @@ GLSPClientDiagram class >> client: aGLSPClient id: aString diagramType: aDiagram
 
 { #category : 'accessing' }
 GLSPClientDiagram class >> clientActionKinds [
-	"The action kinds handled by the client, announced to the server"
+	"The action kinds handled by the client, announced to the server. A server does not send the other kinds"
 
-	^ #( 'setModel' 'updateModel' 'setDirtyState' 'setTypeHints' 'setContextActions' 'status' 'message' )
+	^ #('setModel' 'updateModel' 'setDirtyState' 'setTypeHints' 'setContextActions' 'requestBounds' 'status' 'message')
 ]
 
 { #category : 'accessing' }
 GLSPClientDiagram >> announcer [
 
 	^ announcer
+]
+
+{ #category : 'handling' }
+GLSPClientDiagram >> answerRequestBounds: aRequestBoundsAction [
+	"Lay out the model of the server and answer its bounds. The model is not displayed: the server sends it next, with the bounds"
+
+	| model |
+	model := GLSPGModelElement fromJSON: aRequestBoundsAction newRoot.
+	self dispatch: (GLSPComputedBoundsAction new
+		responseId: aRequestBoundsAction requestId;
+		revision: model revision;
+		bounds: (self boundsComputer boundsOf: model);
+		yourself)
+]
+
+{ #category : 'accessing' }
+GLSPClientDiagram >> boundsComputer [
+	"Computes the bounds asked by the server (requestBounds) when it needs the client to lay out the model"
+
+	^ boundsComputer ifNil: [ boundsComputer := GLSPGModelBoundsComputer new ]
+]
+
+{ #category : 'accessing' }
+GLSPClientDiagram >> boundsComputer: aBoundsComputer [
+	boundsComputer := aBoundsComputer
 ]
 
 { #category : 'accessing' }
@@ -91,12 +117,13 @@ GLSPClientDiagram >> handleAction: anAction [
 	(#( 'setModel' 'updateModel' ) includes: kind) ifTrue: [ root := GLSPGModelElement fromJSON: anAction newRoot ].
 	kind = 'setDirtyState' ifTrue: [ dirty := anAction isDirty ].
 	kind = 'setTypeHints' ifTrue: [
-			shapeHints := anAction shapeHints ifNil: [ #(  ) ].
-			edgeHints := anAction edgeHints ifNil: [ #(  ) ] ].
+		shapeHints := anAction shapeHints ifNil: [ #(  ) ].
+		edgeHints := anAction edgeHints ifNil: [ #(  ) ] ].
 	kind = 'setContextActions' ifTrue: [ paletteItems := anAction actions ifNil: [ #(  ) ] ].
+	kind = 'requestBounds' ifTrue: [ self answerRequestBounds: anAction ].
 	announcer announce: (GLSPClientDiagramChanged new
-			 setDiagram: self action: anAction;
-			 yourself)
+		setDiagram: self action: anAction;
+		yourself)
 ]
 
 { #category : 'accessing' }
