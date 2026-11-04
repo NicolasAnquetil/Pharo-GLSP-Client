@@ -90,6 +90,34 @@ GLSPBlocDiagramElementTest >> sampleRoot [
 	^ root
 ]
 
+{ #category : 'tests - edges' }
+GLSPBlocDiagramElementTest >> testArrowheadIsInsideTheEdgeView [
+
+	| edge arrowhead |
+	edge := (self display: self sampleRoot) viewAt: 'transition1'.
+	arrowhead := edge arrowhead.
+	self assert: arrowhead parent identicalTo: edge.
+	self assert: ((0 @ 0 extent: edge extent) containsRect: (arrowhead position extent: arrowhead extent))
+]
+
+{ #category : 'tests - edges' }
+GLSPBlocDiagramElementTest >> testArrowheadIsNotClippedByTheLine [
+	"Bloc clips the children to the geometry of their parent, and a polyline has no area"
+
+	self deny: ((self display: self sampleRoot) viewAt: 'transition1') clipChildren
+]
+
+{ #category : 'tests - edges' }
+GLSPBlocDiagramElementTest >> testArrowheadPointsAlongTheEdge [
+	"transition1 goes from left to right: the base of the arrowhead is on the left of its tip, symmetric"
+
+	| vertices |
+	vertices := ((self display: self sampleRoot) viewAt: 'transition1') arrowheadVertices.
+	self assert: vertices second x < vertices first x.
+	self assert: vertices third x equals: vertices second x.
+	self assert: vertices second y - vertices first y equals: vertices first y - vertices third y
+]
+
 { #category : 'tests' }
 GLSPBlocDiagramElementTest >> testChildrenOfANodeWithoutLayoutAreAtTheirPosition [
 
@@ -139,6 +167,38 @@ GLSPBlocDiagramElementTest >> testEdgeClipsOnTheTopAndBottomBorders [
 	self assert: edge toPoint equals: 50 @ 200
 ]
 
+{ #category : 'tests - edges' }
+GLSPBlocDiagramElementTest >> testEdgeFollowsItsRoutingPoints [
+
+	| root edge |
+	root := GLSPGModelRoot new
+		        id: 'root';
+		        yourself.
+	root add: (GLSPGNode new
+			 id: 'a';
+			 position: 0 @ 0;
+			 size: 100 @ 40;
+			 yourself).
+	root add: (GLSPGNode new
+			 id: 'b';
+			 position: 300 @ 0;
+			 size: 100 @ 40;
+			 yourself).
+	root add: (GLSPGEdge new
+			 id: 'e';
+			 sourceId: 'a';
+			 targetId: 'b';
+			 routingPoints: (OrderedCollection with: 50 @ 200 with: 350 @ 200);
+			 yourself).
+	edge := (self display: root) viewAt: 'e'.
+	self assert: edge route asArray equals: {
+			(50 @ 40).
+			(50 @ 200).
+			(350 @ 200).
+			(350 @ 40) }.
+	self assert: edge arrowheadVertices second y > edge toPoint y
+]
+
 { #category : 'tests' }
 GLSPBlocDiagramElementTest >> testEdgeGoesFromBorderToBorder [
 
@@ -147,6 +207,14 @@ GLSPBlocDiagramElementTest >> testEdgeGoesFromBorderToBorder [
 	self assert: edge class equals: GLSPBlocEdgeView.
 	self assert: edge fromPoint equals: 90 @ 35.
 	self assert: edge toPoint equals: 200 @ 35
+]
+
+{ #category : 'tests - edges' }
+GLSPBlocDiagramElementTest >> testEdgeHasAnArrowheadAtItsTarget [
+
+	| edge |
+	edge := (self display: self sampleRoot) viewAt: 'transition1'.
+	self assert: edge arrowheadVertices first equals: edge toPoint
 ]
 
 { #category : 'tests' }

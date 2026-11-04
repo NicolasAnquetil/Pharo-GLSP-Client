@@ -12,6 +12,13 @@ Class {
 	#tag : 'Views'
 }
 
+{ #category : 'geometry' }
+GLSPBlocNodeView >> anchorIn: aRectangle towards: aPoint [
+	"The point where an edge going to aPoint leaves my outline, my bounds being aRectangle (diagram coordinates). Override for shapes that are not rectangles"
+
+	^ GLSPBlocEdgeView clip: aRectangle towards: aPoint
+]
+
 { #category : 'updating' }
 GLSPBlocNodeView >> gmodel [
 

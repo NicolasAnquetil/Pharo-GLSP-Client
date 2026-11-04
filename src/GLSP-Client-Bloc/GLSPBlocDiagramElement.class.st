@@ -18,6 +18,17 @@ Class {
 }
 
 { #category : 'building' }
+GLSPBlocDiagramElement >> anchorOf: anId towards: aPoint [
+	"Where an edge going from the shape anId to aPoint leaves its outline (diagram coordinates), nil if anId is not a shape"
+
+	| box |
+	box := (self boundsOf: anId) ifNil: [ ^ nil ].
+	^ (self viewAt: anId)
+		  ifNil: [ GLSPBlocEdgeView clip: box towards: aPoint ]
+		  ifNotNil: [ :view | view anchorIn: box towards: aPoint ]
+]
+
+{ #category : 'building' }
 GLSPBlocDiagramElement >> boundsOf: anId [
 	"The bounds in diagram coordinates of the shape anId, from the GModel (from its view when the GModel has no size)"
 

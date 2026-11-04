@@ -71,6 +71,35 @@ GLSPWorkflowViewsTest >> testEachWorkflowTypeHasItsView [
 ]
 
 { #category : 'tests' }
+GLSPWorkflowViewsTest >> testEdgesAreClippedOnTheOutlineOfDiamonds [
+	"An edge from the left to the decision node d (32x32 at 10@100) ends on the diamond: |dx|/16 + |dy|/16 = 1 from its center"
+
+	| root element end delta |
+	root := self sampleRoot.
+	root add: (GLSPGNode new
+			 id: 'start';
+			 type: 'node';
+			 position: -100 @ 90;
+			 size: 20 @ 20;
+			 yourself).
+	root add: (GLSPGEdge new
+			 id: 'to_d';
+			 type: 'edge';
+			 sourceId: 'start';
+			 targetId: 'd';
+			 yourself).
+	element := GLSPBlocDiagramElement new.
+	GLSPWorkflowViews registerOn: element registry.
+	element extent: 800 @ 400.
+	element root: root.
+	element forceLayout.
+	end := (element viewAt: 'to_d') toPoint.
+	delta := end - (26 @ 116).
+	self assert: (delta x abs / 16 + (delta y abs / 16) closeTo: 1).
+	self assert: end x < 26
+]
+
+{ #category : 'tests' }
 GLSPWorkflowViewsTest >> testForkAndJoinNodesAreDarkBars [
 
 	| bar |

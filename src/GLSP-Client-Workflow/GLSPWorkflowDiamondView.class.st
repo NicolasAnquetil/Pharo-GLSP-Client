@@ -8,6 +8,18 @@ Class {
 	#package : 'GLSP-Client-Workflow'
 }
 
+{ #category : 'geometry' }
+GLSPWorkflowDiamondView >> anchorIn: aRectangle towards: aPoint [
+	"On the diamond: the point of the segment from my center to aPoint where |dx| / (width / 2) + |dy| / (height / 2) = 1"
+
+	| center delta scale |
+	center := aRectangle center.
+	delta := aPoint - center.
+	(delta x = 0 and: [ delta y = 0 ]) ifTrue: [ ^ center ].
+	scale := 1 / (delta x abs / (aRectangle width / 2) + (delta y abs / (aRectangle height / 2))).
+	^ center + (delta * (scale min: 1))
+]
+
 { #category : 'updating' }
 GLSPWorkflowDiamondView >> defaultSize [
 

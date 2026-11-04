@@ -7,7 +7,9 @@ Class {
 	#instVars : [
 		'gmodel',
 		'fromPoint',
-		'toPoint'
+		'toPoint',
+		'route',
+		'arrowheadVertices'
 	],
 	#category : 'GLSP-Client-Bloc-Views',
 	#package : 'GLSP-Client-Bloc',
@@ -29,6 +31,52 @@ GLSPBlocEdgeView class >> clip: aRectangle towards: aPoint [
 ]
 
 { #category : 'updating' }
+GLSPBlocEdgeView >> arrowhead [
+
+	^ self childWithId: #glspArrowhead ifFound: [ :each | each ] ifNone: [
+			  | arrowhead |
+			  arrowhead := BlElement new.
+			  arrowhead id: #glspArrowhead.
+			  arrowhead background: Color darkGray.
+			  self addChild: arrowhead.
+			  arrowhead ]
+]
+
+{ #category : 'updating' }
+GLSPBlocEdgeView >> arrowheadFrom: aPoint to: aTipPoint [
+	"The vertices of an arrowhead with its tip at aTipPoint, pointing from aPoint. nil when the two points are the same"
+
+	| direction base side |
+	aPoint = aTipPoint ifTrue: [ ^ nil ].
+	direction := (aTipPoint - aPoint) normalized.
+	base := aTipPoint - (direction * self arrowheadLength).
+	side := direction y negated @ direction x * self arrowheadHalfWidth.
+	^ {
+		  aTipPoint.
+		  (base + side).
+		  (base - side) }
+]
+
+{ #category : 'updating' }
+GLSPBlocEdgeView >> arrowheadHalfWidth [
+
+	^ 4
+]
+
+{ #category : 'updating' }
+GLSPBlocEdgeView >> arrowheadLength [
+
+	^ 10
+]
+
+{ #category : 'updating' }
+GLSPBlocEdgeView >> arrowheadVertices [
+	"The tip, then the two base points of my arrowhead, in diagram coordinates. nil without arrowhead"
+
+	^ arrowheadVertices
+]
+
+{ #category : 'updating' }
 GLSPBlocEdgeView >> fromPoint [
 
 	^ fromPoint
@@ -41,9 +89,36 @@ GLSPBlocEdgeView >> gmodel [
 ]
 
 { #category : 'updating' }
+GLSPBlocEdgeView >> hasArrowhead [
+	"Override to draw edges without arrowhead"
+
+	^ true
+]
+
+{ #category : 'updating' }
 GLSPBlocEdgeView >> isEdgeView [
 
 	^ true
+]
+
+{ #category : 'updating' }
+GLSPBlocEdgeView >> route [
+	"My points in diagram coordinates: from the outline of my source, through my routing points, to the outline of my target"
+
+	^ route
+]
+
+{ #category : 'updating' }
+GLSPBlocEdgeView >> routeIn: aDiagramElement [
+
+	| routingPoints source target first last |
+	source := (aDiagramElement boundsOf: gmodel sourceId) ifNil: [ ^ nil ].
+	target := (aDiagramElement boundsOf: gmodel targetId) ifNil: [ ^ nil ].
+	routingPoints := (gmodel routingPoints ifNil: [ #(  ) ]) asArray.
+	first := routingPoints ifEmpty: [ target center ] ifNotEmpty: [ routingPoints first ].
+	last := routingPoints ifEmpty: [ source center ] ifNotEmpty: [ routingPoints last ].
+	^ { (aDiagramElement anchorOf: gmodel sourceId towards: first) } , routingPoints
+	  , { (aDiagramElement anchorOf: gmodel targetId towards: last) }
 ]
 
 { #category : 'updating' }
@@ -53,30 +128,44 @@ GLSPBlocEdgeView >> toPoint [
 ]
 
 { #category : 'updating' }
+GLSPBlocEdgeView >> updateArrowheadIn: aBox [
+
+	| triangle |
+	arrowheadVertices ifNil: [ ^ self arrowhead visibility: BlVisibility gone ].
+	triangle := Rectangle encompassing: arrowheadVertices.
+	self arrowhead
+		visibility: BlVisibility visible;
+		position: triangle origin - aBox origin;
+		extent: (triangle extent max: 1 @ 1);
+		geometry: (BlPolygonGeometry vertices: (arrowheadVertices collect: [ :each | each - triangle origin ]))
+]
+
+{ #category : 'updating' }
 GLSPBlocEdgeView >> updateFrom: aGModelElement in: aDiagramElement [
 
 	gmodel := aGModelElement.
+	"Bloc clips the children to the geometry, and my polyline has no area: my arrowhead would not be drawn"
+	self clipChildren: false.
 	self zIndex: 10
 ]
 
 { #category : 'updating' }
 GLSPBlocEdgeView >> updateGeometryIn: aDiagramElement [
-	"Compute my end points from the bounds of my source and target, then my line"
+	"Compute my route from the bounds of my source and target, then my polyline and my arrowhead"
 
-	| source target box |
-	source := aDiagramElement boundsOf: gmodel sourceId.
-	target := aDiagramElement boundsOf: gmodel targetId.
-	(source isNil or: [ target isNil ]) ifTrue: [ ^ self visibility: BlVisibility hidden ].
-	fromPoint := self class clip: source towards: target center.
-	toPoint := self class clip: target towards: source center.
-	box := Rectangle encompassing: {
-			       fromPoint.
-			       toPoint }.
+	| box |
+	route := self routeIn: aDiagramElement.
+	route ifNil: [ ^ self visibility: BlVisibility hidden ].
+	fromPoint := route first.
+	toPoint := route last.
+	arrowheadVertices := self hasArrowhead ifTrue: [ self arrowheadFrom: (route at: route size - 1) to: toPoint ].
+	box := Rectangle encompassing: route , (arrowheadVertices ifNil: [ #(  ) ]).
 	self
 		visibility: BlVisibility visible;
 		position: box origin;
 		extent: (box extent max: 1 @ 1);
-		geometry: (BlLineGeometry from: fromPoint - box origin to: toPoint - box origin);
+		geometry: (BlPolylineGeometry vertices: (route collect: [ :each | each - box origin ]));
 		border: (BlBorder paint: Color darkGray width: 1.5);
-		outskirts: BlOutskirts centered
+		outskirts: BlOutskirts centered.
+	self updateArrowheadIn: box
 ]
