@@ -26,10 +26,37 @@ GLSPBlocNodeView >> isEdgeView [
 
 { #category : 'updating' }
 GLSPBlocNodeView >> layoutForGModel [
+	"As the Sprotty layouts of the Eclipse GLSP clients: hbox and vbox stack the children with a gap; without layout, the children are at their GModel position"
 
-	gmodel layout = 'hbox' ifTrue: [ ^ BlLinearLayout horizontal alignCenter ].
-	gmodel layout = 'vbox' ifTrue: [ ^ BlLinearLayout vertical alignCenter ].
-	^ BlFrameLayout new
+	gmodel layout = 'hbox' ifTrue: [
+			^ BlLinearLayout horizontal
+				  interspace: (self layoutOption: 'hGap' default: 1);
+				  alignCenterLeft;
+				  yourself ].
+	gmodel layout = 'vbox' ifTrue: [
+			^ BlLinearLayout vertical
+				  interspace: (self layoutOption: 'vGap' default: 1);
+				  alignTopCenter;
+				  yourself ].
+	^ GLSPBlocAbsoluteLayout new
+]
+
+{ #category : 'updating' }
+GLSPBlocNodeView >> layoutOption: aName default: aNumber [
+
+	^ (gmodel layoutOptions ifNil: [ Dictionary new ]) at: aName ifAbsent: [ aNumber ]
+]
+
+{ #category : 'updating' }
+GLSPBlocNodeView >> paddingForGModel [
+	"Sprotty layout paddings: 5 by default"
+
+	gmodel layout ifNil: [ ^ BlInsets empty ].
+	^ BlInsets
+		  top: (self layoutOption: 'paddingTop' default: 5)
+		  left: (self layoutOption: 'paddingLeft' default: 5)
+		  bottom: (self layoutOption: 'paddingBottom' default: 5)
+		  right: (self layoutOption: 'paddingRight' default: 5)
 ]
 
 { #category : 'updating' }
@@ -37,7 +64,6 @@ GLSPBlocNodeView >> styleForGModel [
 	"Override in custom views to change the look of the node"
 
 	self
-		padding: (BlInsets all: 6);
 		background: Color white;
 		border: (BlBorder paint: Color gray width: 1);
 		geometry: (BlRoundedRectangleGeometry cornerRadius: 5);
@@ -56,5 +82,6 @@ GLSPBlocNodeView >> updateFrom: aGModelElement in: aDiagramElement [
 						c vertical fitContent ] ]
 		ifNotNil: [ :size | self extent: size ].
 	self layout: self layoutForGModel.
+	self padding: self paddingForGModel.
 	self styleForGModel
 ]

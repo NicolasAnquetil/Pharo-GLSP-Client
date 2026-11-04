@@ -91,6 +91,28 @@ GLSPBlocDiagramElementTest >> sampleRoot [
 ]
 
 { #category : 'tests' }
+GLSPBlocDiagramElementTest >> testChildrenOfANodeWithoutLayoutAreAtTheirPosition [
+
+	| root element |
+	root := GLSPGModelRoot new
+		        id: 'root';
+		        yourself.
+	root add: ((GLSPGNode new
+			  id: 'a';
+			  position: 5 @ 5;
+			  yourself)
+			 add: (GLSPGLabel new
+					  id: 'l';
+					  text: 'Some text';
+					  position: 3 @ 4;
+					  yourself);
+			 yourself).
+	element := self display: root.
+	self assert: (element viewAt: 'l') position equals: 3 @ 4.
+	self assert: (element viewAt: 'a') extent equals: 3 @ 4 + (element viewAt: 'l') extent
+]
+
+{ #category : 'tests' }
 GLSPBlocDiagramElementTest >> testEdgeClipsOnTheTopAndBottomBorders [
 
 	| root edge |

@@ -27,10 +27,13 @@ BaselineOfGLSPClient >> baseline: spec [
 				package: 'GLSP-Client' with: [ spec requires: #( 'GLSP' ) ];
 				package: 'GLSP-Client-Tests' with: [ spec requires: #( 'GLSP-Client' ) ];
 				package: 'GLSP-Client-Bloc' with: [ spec requires: #( 'GLSP-Client' 'Bloc' ) ];
-				package: 'GLSP-Client-Bloc-Tests' with: [ spec requires: #( 'GLSP-Client-Bloc' 'GLSP-Client-Tests' ) ].
+				package: 'GLSP-Client-Bloc-Tests' with: [ spec requires: #( 'GLSP-Client-Bloc' 'GLSP-Client-Tests' ) ];
+				package: 'GLSP-Client-Workflow' with: [ spec requires: #( 'GLSP-Client-Bloc' ) ];
+				package: 'GLSP-Client-Workflow-Tests' with: [ spec requires: #( 'GLSP-Client-Workflow' ) ].
 			spec
 				group: 'Core' with: #( 'GLSP-Client' );
 				group: 'Bloc' with: #( 'GLSP-Client-Bloc' );
-				group: 'Tests' with: #( 'GLSP-Client-Tests' 'GLSP-Client-Bloc-Tests' );
-				group: 'default' with: #( 'Core' 'Bloc' 'Tests' ) ]
+				group: 'Workflow' with: #( 'GLSP-Client-Workflow' );
+				group: 'Tests' with: #( 'GLSP-Client-Tests' 'GLSP-Client-Bloc-Tests' 'GLSP-Client-Workflow-Tests' );
+				group: 'default' with: #( 'Core' 'Bloc' 'Workflow' 'Tests' ) ]
 ]

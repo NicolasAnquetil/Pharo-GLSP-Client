@@ -64,6 +64,17 @@ GLSPGModelReadingTest >> testArgsAreKept [
 ]
 
 { #category : 'tests' }
+GLSPGModelReadingTest >> testLayoutOptionsAreRead [
+
+	| node |
+	node := GLSPGModelElement fromJSON:
+		        (STONJSON fromString:
+			         '{"type":"task:manual","id":"t","layout":"hbox","layoutOptions":{"paddingRight":10,"prefWidth":72.9}}').
+	self assert: (node layoutOptions at: 'paddingRight') equals: 10.
+	self assert: (node layoutOptions at: 'prefWidth') equals: 72.9
+]
+
+{ #category : 'tests' }
 GLSPGModelReadingTest >> testReadCompartmentAndPortByTypePrefix [
 
 	| root |

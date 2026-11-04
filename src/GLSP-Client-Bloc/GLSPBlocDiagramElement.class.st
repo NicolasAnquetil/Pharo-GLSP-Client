@@ -39,11 +39,12 @@ GLSPBlocDiagramElement >> diagram [
 
 { #category : 'client' }
 GLSPBlocDiagramElement >> diagram: aClientDiagramOrNil [
-	"Follow a GLSPClientDiagram: show its model and each new model the server sends"
+	"Follow a GLSPClientDiagram: show its model and each new model the server sends, and measure my views when the server asks for the bounds"
 
 	diagram ifNotNil: [ :previous | previous announcer unsubscribe: self ].
 	diagram := aClientDiagramOrNil.
 	diagram ifNil: [ ^ self ].
+	diagram boundsComputer: (GLSPBlocBoundsComputer registry: registry).
 	diagram announcer when: GLSPClientDiagramChanged send: #diagramChanged: to: self.
 	diagram root ifNotNil: [ :aRoot | self root: aRoot ]
 ]
@@ -90,6 +91,12 @@ GLSPBlocDiagramElement >> rebuild [
 GLSPBlocDiagramElement >> registry [
 
 	^ registry
+]
+
+{ #category : 'accessing' }
+GLSPBlocDiagramElement >> registry: aViewRegistry [
+
+	registry := aViewRegistry
 ]
 
 { #category : 'accessing' }

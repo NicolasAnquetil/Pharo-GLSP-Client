@@ -26,10 +26,9 @@ GLSPBlocLabelView >> isEdgeView [
 
 { #category : 'updating' }
 GLSPBlocLabelView >> updateFrom: aGModelElement in: aDiagramElement [
-
 	gmodel := aGModelElement.
+	self labelMeasurement.
 	self text: (aGModelElement text asRopedText fontSize: 12).
-	self constraintsDo: [ :c |
-			c frame horizontal alignCenter.
-			c frame vertical alignCenter ]
+	self position: (aGModelElement position ifNil: [ 0 @ 0 ]).
+	self constraintsDo: [ :c | c frame horizontal alignCenter. c frame vertical alignCenter ]
 ]

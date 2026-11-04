@@ -7,8 +7,8 @@ GLSPGShapeElement >> isShape [
 
 { #category : '*GLSP-Client' }
 GLSPGShapeElement >> readPropertiesFrom: aDictionary [
-
 	position := GLSPAction pointFromJSON: (aDictionary at: 'position' ifAbsent: [ nil ]).
 	size := GLSPAction dimensionFromJSON: (aDictionary at: 'size' ifAbsent: [ nil ]).
-	layout := aDictionary at: 'layout' ifAbsent: [ nil ]
+	layout := aDictionary at: 'layout' ifAbsent: [ nil ].
+	layoutOptions := aDictionary at: 'layoutOptions' ifAbsent: [ nil ]
 ]
